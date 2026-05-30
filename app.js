@@ -1,9 +1,9 @@
 // Connected to your Supabase project: dwvrkxtnrcxeuptdqxia
-const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
+const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co/rest/v1/";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Initialize the Supabase Client
-const supabase = library.createClient ? library.createClient(SUPABASE_URL, SUPABASE_KEY) : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Direct initialization from the global window object
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // DOM Elements
 const overlay = document.getElementById('overlay');
@@ -22,9 +22,14 @@ let wordsPool = [];
 
 // Audio & Entry interaction - Lifts the curtain
 startBtn.addEventListener('click', () => {
+    // Drop the overlay curtain immediately
     overlay.style.opacity = '0';
     setTimeout(() => overlay.remove(), 1000);
+    
+    // Play the audio loop
     fireAudio.play().catch(err => console.log("Audio autoplay blocked: ", err));
+    
+    // Start the fire logic
     init();
 });
 
@@ -66,7 +71,6 @@ async function updateFireState() {
         }
     } catch (err) {
         console.error("Database connection issue: ", err);
-        // Fallback baseline so the UI works even if DB configuration is pending
         fireSprite.className = "fire status-low";
         fireStatus.innerText = "Sitting quietly by the baseline embers.";
     }
@@ -149,11 +153,9 @@ submitNoteBtn.addEventListener('click', async () => {
         console.error("Could not save note to database: ", err);
     }
 
-    // Always update local UI immediately so the user sees their spark join the fire
     noteInput.value = '';
     noteModal.classList.add('hidden');
     
-    // Temporarily beef up fire size locally for instant satisfaction
     fireSprite.className = "fire status-medium";
     createSpark(keyWord.toLowerCase());
 });
