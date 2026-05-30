@@ -2,12 +2,10 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Standard direct initialization for browser CDNs
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Standard direct initialization
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // DOM Elements
-const overlay = document.getElementById('overlay');
-const startBtn = document.getElementById('start-btn');
 const fireAudio = document.getElementById('fire-audio');
 const fireSprite = document.getElementById('fire-sprite');
 const fireStatus = document.getElementById('fire-status');
@@ -20,21 +18,15 @@ const noteInput = document.getElementById('note-input');
 
 let wordsPool = [];
 
-// Audio & Entry interaction - Lifts the curtain
-startBtn.addEventListener('click', () => {
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.remove(), 1000);
-    
-    // Play the audio loop
-    fireAudio.play().catch(err => console.log("Audio autoplay blocked: ", err));
-    
-    // Start the fire logic
+// Start the program instantly when the window finishes loading
+window.addEventListener('DOMContentLoaded', () => {
     init();
 });
 
 function init() {
     updateFireState();
     fetchSparks();
+    // Refresh fire health and words every 30 seconds
     setInterval(updateFireState, 30000);
     setInterval(fetchSparks, 30000);
 }
@@ -69,6 +61,7 @@ async function updateFireState() {
         }
     } catch (err) {
         console.error("Database connection issue: ", err);
+        // Safe visual fallback so it still runs if the DB connection is slow
         fireSprite.className = "fire status-low";
         fireStatus.innerText = "Sitting quietly by the baseline embers.";
     }
@@ -129,7 +122,11 @@ function createSpark(text) {
 }
 
 // Modal Toggle Logic
-openModalBtn.addEventListener('click', () => noteModal.classList.remove('hidden'));
+openModalBtn.addEventListener('click', () => {
+    noteModal.classList.remove('hidden');
+    // Safely triggers audio playback here via user interaction to bypass browser blocks
+    fireAudio.play().catch(err => console.log("Audio waiting for full interaction:", err));
+});
 closeModalBtn.addEventListener('click', () => noteModal.classList.add('hidden'));
 
 // Submit Note to Database
