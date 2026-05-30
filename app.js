@@ -2,61 +2,52 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
+// 1. Initialize Supabase directly
 let supabase;
-let fireAudio, fireSprite, fireStatus, sparksContainer, openModalBtn, noteModal, closeModalBtn, submitNoteBtn, noteInput, locationInput;
+try {
+    if (window.supabase) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch (e) {
+    console.error("Database connection paused:", e);
+}
+
+// 2. Map DOM Elements directly
+const fireAudio = document.getElementById('fire-audio');
+const fireSprite = document.getElementById('fire-sprite');
+const fireStatus = document.getElementById('fire-status');
+const sparksContainer = document.getElementById('sparks-container');
+const openModalBtn = document.getElementById('open-modal-btn');
+const noteModal = document.getElementById('note-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const submitNoteBtn = document.getElementById('submit-note-btn');
+const noteInput = document.getElementById('note-input');
+const locationInput = document.getElementById('location-input');
+
 let wordsPool = [];
 
-// Safe bootloader
-window.addEventListener('DOMContentLoaded', () => {
-    // 1. Map DOM Elements safely
-    fireAudio = document.getElementById('fire-audio');
-    fireSprite = document.getElementById('fire-sprite');
-    fireStatus = document.getElementById('fire-status');
-    sparksContainer = document.getElementById('sparks-container');
-    openModalBtn = document.getElementById('open-modal-btn');
-    noteModal = document.getElementById('note-modal');
-    closeModalBtn = document.getElementById('close-modal-btn');
-    submitNoteBtn = document.getElementById('submit-note-btn');
-    noteInput = document.getElementById('note-input');
-    locationInput = document.getElementById('location-input');
-
-    // 2. CRITICAL UI FUNCTIONS AT THE TOP
-    // This guarantees your panels open/close even if the database fails to load
-    if (openModalBtn && noteModal) {
-        openModalBtn.addEventListener('click', () => {
-            noteModal.classList.remove('hidden');
-        });
-    }
-    
-    if (closeModalBtn && noteModal) {
-        closeModalBtn.addEventListener('click', () => {
-            noteModal.classList.add('hidden');
-        });
-    }
-
-    if (submitNoteBtn) {
-        submitNoteBtn.addEventListener('click', handleNoteSubmission);
-    }
-
-    // 3. Isolated Database Initialization
-    try {
-        if ('supabase' in window) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        }
-    } catch (e) {
-        console.error("Database library initialization paused:", e);
-    }
-
-    // 4. Fire up background loops
-    init();
-});
-
-function init() {
-    updateFireState();
-    fetchSparks();
-    setInterval(updateFireState, 30000);
-    setInterval(fetchSparks, 30000);
+// 3. Direct Event Listeners for the UI Elements
+if (openModalBtn && noteModal) {
+    openModalBtn.addEventListener('click', () => {
+        noteModal.classList.remove('hidden');
+    });
 }
+
+if (closeModalBtn && noteModal) {
+    closeModalBtn.addEventListener('click', () => {
+        noteModal.classList.add('hidden');
+    });
+}
+
+if (submitNoteBtn) {
+    submitNoteBtn.addEventListener('click', handleNoteSubmission);
+}
+
+// 4. Start Background Fire Mechanics
+updateFireState();
+fetchSparks();
+setInterval(updateFireState, 30000);
+setInterval(fetchSparks, 30000);
 
 // Check real-time database state to resize the pixel fire asset
 async function updateFireState() {
