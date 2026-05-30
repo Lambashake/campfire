@@ -134,14 +134,11 @@ submitNoteBtn.addEventListener('click', async () => {
     const fullText = noteInput.value.trim();
     if (!fullText) return;
 
-    const words = fullText.split(' ').filter(w => w.length > 3);
-    const fallbackWord = fullText.split(' ')[0] || "joy";
-    const keyWord = words.length > 0 ? words[Math.floor(Math.random() * words.length)] : fallbackWord;
-
     try {
+        // We now send the complete fullText sentence to BOTH columns
         const { error } = await supabase
             .from('gratitude_notes')
-            .insert([{ text: fullText, word: keyWord.toLowerCase() }]);
+            .insert([{ text: fullText, word: fullText }]);
 
         if (error) throw error;
     } catch (err) {
@@ -151,6 +148,7 @@ submitNoteBtn.addEventListener('click', async () => {
     noteInput.value = '';
     noteModal.classList.add('hidden');
     
+    // Instantly show the full sentence floating up locally
     fireSprite.className = "fire status-medium";
-    createSpark(keyWord.toLowerCase());
+    createSpark(fullText);
 });
