@@ -2,66 +2,58 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// ==========================================
-// 1. CRITICAL UI TOGGLES (Must run first!)
-// ==========================================
-const openModalBtn = document.getElementById('open-modal-btn');
-const closeModalBtn = document.getElementById('close-modal-btn');
-const noteModal = document.getElementById('note-modal');
-
-if (openModalBtn && noteModal) {
-    openModalBtn.onclick = function() {
-        noteModal.classList.remove('hidden');
-    };
-}
-
-if (closeModalBtn && noteModal) {
-    closeModalBtn.onclick = function() {
-        noteModal.classList.add('hidden');
-    };
-}
-
-// ==========================================
-// 2. MAP REMAINING ELEMENTS SAFELY
-// ==========================================
-const fireAudio = document.getElementById('fire-audio');
-const fireSprite = document.getElementById('fire-sprite');
-const fireStatus = document.getElementById('fire-status');
-const sparksContainer = document.getElementById('sparks-container');
-const submitNoteBtn = document.getElementById('submit-note-btn');
-const noteInput = document.getElementById('note-input');
-const locationInput = document.getElementById('location-input');
-
-let wordsPool = [];
 let supabase = null;
+let fireAudio, fireSprite, fireStatus, sparksContainer, openModalBtn, noteModal, closeModalBtn, submitNoteBtn, noteInput, locationInput;
+let wordsPool = [];
 
-// ==========================================
-// 3. ISOLATED DATABASE INITIALIZATION
-// ==========================================
-try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Wait for the window layout to be ready to prevent null elements
+window.addEventListener('DOMContentLoaded', () => {
+    
+    // Initialize UI Elements
+    openModalBtn = document.getElementById('open-modal-btn');
+    closeModalBtn = document.getElementById('close-modal-btn');
+    noteModal = document.getElementById('note-modal');
+    fireAudio = document.getElementById('fire-audio');
+    fireSprite = document.getElementById('fire-sprite');
+    fireStatus = document.getElementById('fire-status');
+    sparksContainer = document.getElementById('sparks-container');
+    submitNoteBtn = document.getElementById('submit-note-btn');
+    noteInput = document.getElementById('note-input');
+    locationInput = document.getElementById('location-input');
+
+    // Wire up the button functions cleanly
+    if (openModalBtn && noteModal) {
+        openModalBtn.onclick = function() {
+            noteModal.classList.remove('hidden');
+        };
     }
-} catch (e) {
-    console.error("Database framework skipped or offline, using backup mode:", e);
-}
 
-// Attach submission action
-if (submitNoteBtn) {
-    submitNoteBtn.onclick = handleNoteSubmission;
-}
+    if (closeModalBtn && noteModal) {
+        closeModalBtn.onclick = function() {
+            noteModal.classList.add('hidden');
+        };
+    }
 
-// Fire up background processes cleanly
-startEngine();
+    if (submitNoteBtn) {
+        submitNoteBtn.onclick = handleNoteSubmission;
+    }
 
-function startEngine() {
+    // Safely initialize Supabase
+    try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+    } catch (e) {
+        console.error("Database connection paused:", e);
+    }
+
+    // Fire up background processes
     updateFireState();
     fetchSparks();
     setInterval(updateFireState, 30000);
     setInterval(fetchSparks, 30000);
-}
+});
 
-// Check real-time database state to resize the pixel fire asset
 async function updateFireState() {
     if (!supabase) {
         if (fireSprite) fireSprite.className = "fire status-low";
@@ -70,19 +62,16 @@ async function updateFireState() {
     }
     try {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        
         let { data: recentNotes, error } = await supabase
             .from('gratitude_notes')
             .select('id')
             .gte('created_at', oneDayAgo);
 
         if (error) throw error;
-
         const count = recentNotes ? recentNotes.length : 0;
         if (!fireSprite || !fireStatus) return;
-        
+
         fireSprite.className = "fire";
-        
         if (count === 0) {
             fireSprite.classList.add('status-dead');
             fireStatus.innerText = "The fire has gone out. Add a note to spark it back to life.";
@@ -97,17 +86,16 @@ async function updateFireState() {
             fireStatus.innerText = "The community fire is roaring beautifully today!";
         }
     } catch (err) {
-        console.error("Database connection issue: ", err);
+        console.error("Database status update issue:", err);
         if (fireSprite) fireSprite.className = "fire status-low";
         if (fireStatus) fireStatus.innerText = "Sitting quietly by the baseline embers.";
     }
 }
 
-// Fetch live notes to float out into space as sparks
 async function fetchSparks() {
     if (!supabase) {
         wordsPool = ["warmth and peace||Global Hearth", "gathered close around the fire||Everywhere"];
-        if (sparksContainer) sparksContainer.innerHTML = ''; 
+        if (sparksContainer) sparksContainer.innerHTML = '';
         createSpark(wordsPool[0]);
         return;
     }
@@ -123,18 +111,17 @@ async function fetchSparks() {
         if (!notes || notes.length === 0) {
             wordsPool = ["warmth and peace||Hearth", "cozy connection||Everywhere"];
         } else {
-            // FILTER: Only display entries that contain multiple words (sentences)
             wordsPool = notes
                 .map(n => n.word)
                 .filter(text => text && text.trim().includes(' '));
-            
+
             if (wordsPool.length === 0) {
                 wordsPool = ["welcome back to the hearth||World", "the fire is resetting fresh||Space"];
             }
         }
-        
+
         if (sparksContainer) {
-            sparksContainer.innerHTML = ''; 
+            sparksContainer.innerHTML = '';
             for (let i = 0; i < Math.min(5, wordsPool.length); i++) {
                 createSpark(wordsPool[i]);
             }
@@ -148,28 +135,28 @@ async function fetchSparks() {
 
 function createSpark(rawText) {
     if (!rawText || !sparksContainer) return;
-    
+
     const parts = rawText.split('||');
     const mainNoteText = parts[0];
     const locationText = parts[1] ? parts[1].trim() : "";
 
     const spark = document.createElement('div');
     spark.classList.add('spark-word');
-    
+
     const noteSpan = document.createElement('span');
     noteSpan.innerText = mainNoteText;
     spark.appendChild(noteSpan);
-    
+
     if (locationText) {
         const locSpan = document.createElement('span');
         locSpan.classList.add('spark-location');
         locSpan.innerText = `from ${locationText}`;
         spark.appendChild(locSpan);
     }
-    
-    const startX = Math.floor(Math.random() * 40) + 15; 
-    const endX = startX + (Math.floor(Math.random() * 20) - 10); 
-    
+
+    const startX = Math.floor(Math.random() * 40) + 15;
+    const endX = startX + (Math.floor(Math.random() * 20) - 10);
+
     spark.style.setProperty('--start-x', `${startX}%`);
     spark.style.setProperty('--end-x', `${endX}%`);
     spark.style.animationDuration = `${11 + Math.random() * 5}s`;
@@ -187,19 +174,17 @@ function createSpark(rawText) {
     sparksContainer.appendChild(spark);
 }
 
-// Submit Note Logic Function
 async function handleNoteSubmission() {
     if (!noteInput || !locationInput) return;
-    
+
     const fullText = noteInput.value.trim();
     const locationVal = locationInput.value.trim();
     if (!fullText) return;
 
-    // Sound Engine Playback Trigger
     if (fireAudio) {
         fireAudio.play()
-            .then(() => console.log("Crackle audio activated."))
-            .catch(err => console.error("Audio engine interaction check:", err));
+            .then(() => console.log("Crackle looping."))
+            .catch(err => console.error("Audio blocked by browser permissions:", err));
     }
 
     const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
@@ -216,9 +201,9 @@ async function handleNoteSubmission() {
     }
 
     noteInput.value = '';
-    locationInput.value = ''; 
+    locationInput.value = '';
     if (noteModal) noteModal.classList.add('hidden');
-    
+
     if (fireSprite) fireSprite.className = "fire status-medium";
     createSpark(packageToSave);
 }
