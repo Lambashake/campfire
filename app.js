@@ -123,15 +123,21 @@ function createSpark(text) {
 }
 
 // Modal Toggle Logic
-openModalBtn.addEventListener('click', () => {
-    noteModal.classList.remove('hidden');
-    if (fireAudio) {
-        fireAudio.muted = false; // Shatters the browser's autoplay block
-        fireAudio.play()
-            .then(() => console.log("Hearth audio loop successfully authorized."))
-            .catch(err => console.error("Audio block:", err));
-    }
-});
+if (openModalBtn) {
+    openModalBtn.addEventListener('click', () => {
+        if (noteModal) noteModal.classList.remove('hidden');
+        if (fireAudio) {
+            fireAudio.muted = false;
+            fireAudio.play().catch(err => console.log("Audio waiting for interaction:", err));
+        }
+    });
+}
+
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+        if (noteModal) noteModal.classList.add('hidden');
+    });
+}
 
 // Submit Note to Database
 submitNoteBtn.addEventListener('click', async () => {
