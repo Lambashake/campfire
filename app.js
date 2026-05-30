@@ -1,5 +1,5 @@
 // Connected to your Supabase project: dwvrkxtnrcxeuptdqxia
-const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
 // Direct initialization from the global window object
