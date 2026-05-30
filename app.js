@@ -1,11 +1,9 @@
-// Import Supabase directly as a module to guarantee it initializes perfectly
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-
+// Connected to your Supabase project: dwvrkxtnrcxeuptdqxia
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Clear, direct initialization
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Standard direct initialization
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // DOM Elements
 const fireAudio = document.getElementById('fire-audio');
@@ -68,31 +66,40 @@ async function updateFireState() {
     }
 }
 
-// Fetch random words from recent entries to turn into floating sparks
+// Fetch recent entries to turn into floating sparks
 async function fetchSparks() {
     try {
         let { data: notes, error } = await supabase
             .from('gratitude_notes')
             .select('word')
             .order('created_at', { ascending: false })
-            .limit(30);
+            .limit(40); // Grab a slightly larger pool to account for filtered out old words
 
         if (error) throw error;
 
         if (!notes || notes.length === 0) {
-            wordsPool = ["warmth", "peace", "hearth", "quiet", "spark"];
+            wordsPool = ["warmth and peace", "gathered around the hearth", "quiet reflections"];
         } else {
-            wordsPool = notes.map(n => n.word);
+            // FILTER: Only include entries that contain at least one space (meaning it's a full sentence!)
+            wordsPool = notes
+                .map(n => n.word)
+                .filter(text => text && text.trim().includes(' '));
+            
+            // Fallback if all database items are old single words
+            if (wordsPool.length === 0) {
+                wordsPool = ["welcome to the hearth", "the fire is starting fresh"];
+            }
         }
         
         sparksContainer.innerHTML = ''; 
+        // Display up to 5 full sentences floating simultaneously
         for (let i = 0; i < Math.min(5, wordsPool.length); i++) {
-            createSpark(wordsPool[Math.floor(Math.random() * wordsPool.length)]);
+            createSpark(wordsPool[i]);
         }
     } catch (err) {
-        wordsPool = ["warmth", "peace", "hearth", "connection"];
+        wordsPool = ["warmth and peace", "cozy connections"];
         sparksContainer.innerHTML = '';
-        createSpark("welcome");
+        createSpark("welcome back by the fire");
     }
 }
 
@@ -102,12 +109,14 @@ function createSpark(text) {
     spark.classList.add('spark-word');
     spark.innerText = text;
     
-    const startX = Math.floor(Math.random() * 40) + 30; 
-    const endX = startX + (Math.floor(Math.random() * 40) - 20); 
+    // Give long sentences a slightly wider movement range so they don't overlap awkwardly
+    const startX = Math.floor(Math.random() * 30) + 20; 
+    const endX = startX + (Math.floor(Math.random() * 20) - 10); 
     
     spark.style.setProperty('--start-x', `${startX}%`);
     spark.style.setProperty('--end-x', `${endX}%`);
-    spark.style.animationDuration = `${6 + Math.random() * 6}s`;
+    // Slow down the animation slightly so full sentences are readable as they rise
+    spark.style.animationDuration = `${9 + Math.random() * 5}s`;
 
     spark.addEventListener('click', () => {
         spark.style.opacity = '0';
@@ -125,17 +134,22 @@ function createSpark(text) {
 // Modal Toggle Logic
 openModalBtn.addEventListener('click', () => {
     noteModal.classList.remove('hidden');
-    fireAudio.play().catch(err => console.log("Audio waiting for full interaction:", err));
 });
 closeModalBtn.addEventListener('click', () => noteModal.classList.add('hidden'));
 
-// Submit Note to Database
+// Submit Note to Database & Unmute Audio
 submitNoteBtn.addEventListener('click', async () => {
     const fullText = noteInput.value.trim();
     if (!fullText) return;
 
+    // AUDIO TRIGGER: The browser completely allows audio to start playing here 
+    // because clicking "Add to the Fire" is an explicit user gesture.
+    fireAudio.play()
+        .then(() => console.log("Fire ambient crackle loop started successfully!"))
+        .catch(err => console.error("Audio playback stalled:", err));
+
     try {
-        // We now send the complete fullText sentence to BOTH columns
+        // Save the raw, un-split full sentence directly into BOTH columns
         const { error } = await supabase
             .from('gratitude_notes')
             .insert([{ text: fullText, word: fullText }]);
@@ -148,7 +162,6 @@ submitNoteBtn.addEventListener('click', async () => {
     noteInput.value = '';
     noteModal.classList.add('hidden');
     
-    // Instantly show the full sentence floating up locally
     fireSprite.className = "fire status-medium";
     createSpark(fullText);
 });
