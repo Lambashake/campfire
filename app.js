@@ -2,8 +2,13 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Standard direct initialization
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Safe global initialization
+let supabase;
+try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+    console.error("Supabase library initialization paused, using fallback mode:", e);
+}
 
 // DOM Elements
 const fireAudio = document.getElementById('fire-audio');
@@ -26,13 +31,17 @@ window.addEventListener('DOMContentLoaded', () => {
 function init() {
     updateFireState();
     fetchSparks();
-    // Refresh fire health and words every 30 seconds
     setInterval(updateFireState, 30000);
     setInterval(fetchSparks, 30000);
 }
 
 // Fetch notes from the last 24 hours to determine fire strength
 async function updateFireState() {
+    if (!supabase) {
+        fireSprite.className = "fire status-low";
+        fireStatus.innerText = "Sitting quietly by the baseline embers.";
+        return;
+    }
     try {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         
@@ -68,31 +77,35 @@ async function updateFireState() {
 
 // Fetch recent entries to turn into floating sparks
 async function fetchSparks() {
+    if (!supabase) {
+        wordsPool = ["warmth and peace", "gathered around the hearth", "quiet reflections"];
+        sparksContainer.innerHTML = ''; 
+        createSpark(wordsPool[0]);
+        return;
+    }
     try {
         let { data: notes, error } = await supabase
             .from('gratitude_notes')
             .select('word')
             .order('created_at', { ascending: false })
-            .limit(40); // Grab a slightly larger pool to account for filtered out old words
+            .limit(40);
 
         if (error) throw error;
 
         if (!notes || notes.length === 0) {
             wordsPool = ["warmth and peace", "gathered around the hearth", "quiet reflections"];
         } else {
-            // FILTER: Only include entries that contain at least one space (meaning it's a full sentence!)
+            // FILTER: Only include entries that contain at least one space (full sentences)
             wordsPool = notes
                 .map(n => n.word)
                 .filter(text => text && text.trim().includes(' '));
             
-            // Fallback if all database items are old single words
             if (wordsPool.length === 0) {
                 wordsPool = ["welcome to the hearth", "the fire is starting fresh"];
             }
         }
         
         sparksContainer.innerHTML = ''; 
-        // Display up to 5 full sentences floating simultaneously
         for (let i = 0; i < Math.min(5, wordsPool.length); i++) {
             createSpark(wordsPool[i]);
         }
@@ -109,13 +122,11 @@ function createSpark(text) {
     spark.classList.add('spark-word');
     spark.innerText = text;
     
-    // Give long sentences a slightly wider movement range so they don't overlap awkwardly
     const startX = Math.floor(Math.random() * 30) + 20; 
     const endX = startX + (Math.floor(Math.random() * 20) - 10); 
     
     spark.style.setProperty('--start-x', `${startX}%`);
     spark.style.setProperty('--end-x', `${endX}%`);
-    // Slow down the animation slightly so full sentences are readable as they rise
     spark.style.animationDuration = `${9 + Math.random() * 5}s`;
 
     spark.addEventListener('click', () => {
@@ -131,7 +142,7 @@ function createSpark(text) {
     sparksContainer.appendChild(spark);
 }
 
-// Modal Toggle Logic
+// Modal Toggle Logic - Guaranteed to run safely
 openModalBtn.addEventListener('click', () => {
     noteModal.classList.remove('hidden');
 });
@@ -142,21 +153,22 @@ submitNoteBtn.addEventListener('click', async () => {
     const fullText = noteInput.value.trim();
     if (!fullText) return;
 
-    // AUDIO TRIGGER: The browser completely allows audio to start playing here 
-    // because clicking "Add to the Fire" is an explicit user gesture.
-    fireAudio.play()
-        .then(() => console.log("Fire ambient crackle loop started successfully!"))
-        .catch(err => console.error("Audio playback stalled:", err));
+    // Direct Audio play trigger
+    if (fireAudio) {
+        fireAudio.play()
+            .then(() => console.log("Fire ambient crackle loop started!"))
+            .catch(err => console.error("Audio waiting on interaction:", err));
+    }
 
-    try {
-        // Save the raw, un-split full sentence directly into BOTH columns
-        const { error } = await supabase
-            .from('gratitude_notes')
-            .insert([{ text: fullText, word: fullText }]);
-
-        if (error) throw error;
-    } catch (err) {
-        console.error("Could not save note to database: ", err);
+    if (supabase) {
+        try {
+            const { error } = await supabase
+                .from('gratitude_notes')
+                .insert([{ text: fullText, word: fullText }]);
+            if (error) throw error;
+        } catch (err) {
+            console.error("Could not save note to database: ", err);
+        }
     }
 
     noteInput.value = '';
