@@ -1,9 +1,11 @@
-// Connected to your Supabase project: dwvrkxtnrcxeuptdqxia
+// Import Supabase directly as a module to guarantee it initializes perfectly
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Standard direct initialization
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Clear, direct initialization
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // DOM Elements
 const fireAudio = document.getElementById('fire-audio');
@@ -61,7 +63,6 @@ async function updateFireState() {
         }
     } catch (err) {
         console.error("Database connection issue: ", err);
-        // Safe visual fallback so it still runs if the DB connection is slow
         fireSprite.className = "fire status-low";
         fireStatus.innerText = "Sitting quietly by the baseline embers.";
     }
@@ -124,7 +125,6 @@ function createSpark(text) {
 // Modal Toggle Logic
 openModalBtn.addEventListener('click', () => {
     noteModal.classList.remove('hidden');
-    // Safely triggers audio playback here via user interaction to bypass browser blocks
     fireAudio.play().catch(err => console.log("Audio waiting for full interaction:", err));
 });
 closeModalBtn.addEventListener('click', () => noteModal.classList.add('hidden'));
