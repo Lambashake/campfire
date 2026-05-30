@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Force the modal to have absolute top authority over any invisible elements */
+        .modal { z-index: 99999 !important; }
+        #open-modal-btn { position: relative; z-index: 99998 !important; pointer-events: auto !important; }
+    </style>
 </head>
 <body>
 
@@ -23,7 +28,7 @@
             <p class="presence-counter">✨ Someone else is sitting by the fire with you.</p>
         </div>
 
-        <button id="open-modal-btn" class="pixel-btn">Stoke the Fire</button>
+        <button id="open-modal-btn" class="pixel-btn" onclick="document.getElementById('note-modal').classList.remove('hidden');">Stoke the Fire</button>
     </div>
 
     <div id="note-modal" class="modal hidden">
@@ -33,7 +38,7 @@
             <input type="text" id="location-input" maxlength="30" placeholder="Where are you? (Optional, e.g. Mumbai)" autocomplete="off" style="margin-top: 0px; border-color: #ff6b3d; font-size: 20px;">
             
             <div class="modal-actions">
-                <button id="close-modal-btn" class="pixel-btn secondary">Cancel</button>
+                <button id="close-modal-btn" class="pixel-btn secondary" onclick="document.getElementById('note-modal').classList.add('hidden');">Cancel</button>
                 <button id="submit-note-btn" class="pixel-btn">Add to the Fire</button>
             </div>
         </div>
@@ -41,7 +46,7 @@
 
     <audio id="fire-audio" loop src="https://archive.org/download/ambient-fire-crackle/ambient-fire-crackle.mp3"></audio>
 
-    <script src="burner.js?v=101" defer></script>
+    <script src="burner.js?v=105" defer></script>
 
 </body>
 </html>
