@@ -6,18 +6,9 @@ let supabase;
 let fireAudio, fireSprite, fireStatus, sparksContainer, openModalBtn, noteModal, closeModalBtn, submitNoteBtn, noteInput, locationInput;
 let wordsPool = [];
 
-// This safe bootloader waits until the browser has fully built the page layout
+// Safe bootloader
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Safely initialize Supabase client now that the window is ready
-    try {
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        }
-    } catch (e) {
-        console.error("Database connection paused, using local backup mode:", e);
-    }
-
-    // 2. Map DOM Elements safely
+    // 1. Map DOM Elements safely
     fireAudio = document.getElementById('fire-audio');
     fireSprite = document.getElementById('fire-sprite');
     fireStatus = document.getElementById('fire-status');
@@ -29,7 +20,8 @@ window.addEventListener('DOMContentLoaded', () => {
     noteInput = document.getElementById('note-input');
     locationInput = document.getElementById('location-input');
 
-    // 3. Attach Event Listeners
+    // 2. CRITICAL UI FUNCTIONS AT THE TOP
+    // This guarantees your panels open/close even if the database fails to load
     if (openModalBtn && noteModal) {
         openModalBtn.addEventListener('click', () => {
             noteModal.classList.remove('hidden');
@@ -46,7 +38,16 @@ window.addEventListener('DOMContentLoaded', () => {
         submitNoteBtn.addEventListener('click', handleNoteSubmission);
     }
 
-    // 4. Fire up loops
+    // 3. Isolated Database Initialization
+    try {
+        if ('supabase' in window) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+    } catch (e) {
+        console.error("Database library initialization paused:", e);
+    }
+
+    // 4. Fire up background loops
     init();
 });
 
@@ -191,11 +192,11 @@ async function handleNoteSubmission() {
     const locationVal = locationInput.value.trim();
     if (!fullText) return;
 
-    // Sound Engine Activation (Unlocks audio natively upon form submission click)
+    // Sound Engine Activation
     if (fireAudio) {
         fireAudio.play()
             .then(() => console.log("Ambient fireplace audio looping successfully!"))
-            .catch(err => console.error("Audio system waiting on direct interaction gesture:", err));
+            .catch(err => console.error("Audio system waiting on interaction gesture:", err));
     }
 
     const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
