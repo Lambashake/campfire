@@ -6,6 +6,7 @@
     <title>Keep the Fire Going</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -29,6 +30,9 @@
         <div class="modal-content">
             <h2>What are you grateful for today?</h2>
             <input type="text" id="note-input" maxlength="100" placeholder="Type a short note..." autocomplete="off">
+            
+            <input type="text" id="location-input" maxlength="30" placeholder="Where are you? (Optional, e.g. Mumbai)" autocomplete="off" style="margin-top: 0px; border-color: #ff6b3d; font-size: 20px;">
+            
             <div class="modal-actions">
                 <button id="close-modal-btn" class="pixel-btn secondary">Cancel</button>
                 <button id="submit-note-btn" class="pixel-btn">Add to the Fire</button>
@@ -38,7 +42,7 @@
 
     <audio id="fire-audio" loop src="https://archive.org/download/ambient-fire-crackle/ambient-fire-crackle.mp3"></audio>
 
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
 
 </body>
 </html>
