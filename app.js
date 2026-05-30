@@ -2,8 +2,8 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Direct initialization from the global window object
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Standard direct initialization for browser CDNs
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // DOM Elements
 const overlay = document.getElementById('overlay');
@@ -22,7 +22,6 @@ let wordsPool = [];
 
 // Audio & Entry interaction - Lifts the curtain
 startBtn.addEventListener('click', () => {
-    // Drop the overlay curtain immediately
     overlay.style.opacity = '0';
     setTimeout(() => overlay.remove(), 1000);
     
@@ -36,7 +35,6 @@ startBtn.addEventListener('click', () => {
 function init() {
     updateFireState();
     fetchSparks();
-    // Refresh fire health and words every 30 seconds
     setInterval(updateFireState, 30000);
     setInterval(fetchSparks, 30000);
 }
