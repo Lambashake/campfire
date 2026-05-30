@@ -125,9 +125,13 @@ function createSpark(text) {
 // Modal Toggle Logic
 openModalBtn.addEventListener('click', () => {
     noteModal.classList.remove('hidden');
-    fireAudio.play().catch(err => console.log("Audio waiting for full interaction:", err));
+    if (fireAudio) {
+        fireAudio.muted = false; // Shatters the browser's autoplay block
+        fireAudio.play()
+            .then(() => console.log("Hearth audio loop successfully authorized."))
+            .catch(err => console.error("Audio block:", err));
+    }
 });
-closeModalBtn.addEventListener('click', () => noteModal.classList.add('hidden'));
 
 // Submit Note to Database
 submitNoteBtn.addEventListener('click', async () => {
