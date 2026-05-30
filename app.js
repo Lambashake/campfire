@@ -80,7 +80,7 @@ async function fetchSparks() {
         if (error) throw error;
 
         if (!notes || notes.length === 0) {
-            wordsPool = ["warmth", "peace", "hearth", "quiet", "spark"];
+            wordsPool = ["warmth and peace", "hearth and quiet"];
         } else {
             wordsPool = notes.map(n => n.word);
         }
