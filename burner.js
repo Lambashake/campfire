@@ -1,17 +1,11 @@
-// Connected to your Supabase project: dwvrkxtnrcxeuptdqxia
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
 let supabase = null;
-let fireAudio, fireSprite, fireStatus, sparksContainer, openModalBtn, noteModal, closeModalBtn, submitNoteBtn, noteInput, locationInput;
+let fireAudio, fireSprite, fireStatus, sparksContainer, noteModal, submitNoteBtn, noteInput, locationInput;
 let wordsPool = [];
 
-// Wait for the window layout to be ready to prevent null elements
 window.addEventListener('DOMContentLoaded', () => {
-    
-    // Initialize UI Elements
-    openModalBtn = document.getElementById('open-modal-btn');
-    closeModalBtn = document.getElementById('close-modal-btn');
     noteModal = document.getElementById('note-modal');
     fireAudio = document.getElementById('fire-audio');
     fireSprite = document.getElementById('fire-sprite');
@@ -21,24 +15,10 @@ window.addEventListener('DOMContentLoaded', () => {
     noteInput = document.getElementById('note-input');
     locationInput = document.getElementById('location-input');
 
-    // Wire up the button functions cleanly
-    if (openModalBtn && noteModal) {
-        openModalBtn.onclick = function() {
-            noteModal.classList.remove('hidden');
-        };
-    }
-
-    if (closeModalBtn && noteModal) {
-        closeModalBtn.onclick = function() {
-            noteModal.classList.add('hidden');
-        };
-    }
-
     if (submitNoteBtn) {
         submitNoteBtn.onclick = handleNoteSubmission;
     }
 
-    // Safely initialize Supabase
     try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -47,7 +27,6 @@ window.addEventListener('DOMContentLoaded', () => {
         console.error("Database connection paused:", e);
     }
 
-    // Fire up background processes
     updateFireState();
     fetchSparks();
     setInterval(updateFireState, 30000);
