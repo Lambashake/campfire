@@ -2,32 +2,51 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// Safe global initialization
 let supabase;
-try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-} catch (e) {
-    console.error("Database connection paused, using local backup simulation mode:", e);
-}
-
-// DOM Elements
-const fireAudio = document.getElementById('fire-audio');
-const fireSprite = document.getElementById('fire-sprite');
-const fireStatus = document.getElementById('fire-status');
-const sparksContainer = document.getElementById('sparks-container');
-const openModalBtn = document.getElementById('open-modal-btn');
-const noteModal = document.getElementById('note-modal');
-const closeModalBtn = document.getElementById('close-modal-btn');
-const submitNoteBtn = document.getElementById('submit-note-btn');
-const noteInput = document.getElementById('note-input');
-const locationInput = document.getElementById('location-input');
-
+let fireAudio, fireSprite, fireStatus, sparksContainer, openModalBtn, noteModal, closeModalBtn, submitNoteBtn, noteInput, locationInput;
 let wordsPool = [];
 
-// Boot up layout modules
+// This safe bootloader waits until the browser has fully built the page layout
 window.addEventListener('DOMContentLoaded', () => {
+    // 1. Safely initialize Supabase client now that the window is ready
+    try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+    } catch (e) {
+        console.error("Database connection paused, using local backup mode:", e);
+    }
+
+    // 2. Map DOM Elements safely
+    fireAudio = document.getElementById('fire-audio');
+    fireSprite = document.getElementById('fire-sprite');
+    fireStatus = document.getElementById('fire-status');
+    sparksContainer = document.getElementById('sparks-container');
+    openModalBtn = document.getElementById('open-modal-btn');
+    noteModal = document.getElementById('note-modal');
+    closeModalBtn = document.getElementById('close-modal-btn');
+    submitNoteBtn = document.getElementById('submit-note-btn');
+    noteInput = document.getElementById('note-input');
+    locationInput = document.getElementById('location-input');
+
+    // 3. Attach Event Listeners
+    if (openModalBtn && noteModal) {
+        openModalBtn.addEventListener('click', () => {
+            noteModal.classList.remove('hidden');
+        });
+    }
+    
+    if (closeModalBtn && noteModal) {
+        closeModalBtn.addEventListener('click', () => {
+            noteModal.classList.add('hidden');
+        });
+    }
+
+    if (submitNoteBtn) {
+        submitNoteBtn.addEventListener('click', handleNoteSubmission);
+    }
+
+    // 4. Fire up loops
     init();
 });
 
@@ -164,52 +183,38 @@ function createSpark(rawText) {
     sparksContainer.appendChild(spark);
 }
 
-// Modal Toggle Mechanics
-if (openModalBtn) {
-    openModalBtn.addEventListener('click', () => {
-        if (noteModal) noteModal.classList.remove('hidden');
-    });
-}
-if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', () => {
-        if (noteModal) noteModal.classList.add('hidden');
-    });
-}
+// Submit Note Logic Function
+async function handleNoteSubmission() {
+    if (!noteInput || !locationInput) return;
+    
+    const fullText = noteInput.value.trim();
+    const locationVal = locationInput.value.trim();
+    if (!fullText) return;
 
-// Submit Note to Database Stack
-if (submitNoteBtn) {
-    submitNoteBtn.addEventListener('click', async () => {
-        if (!noteInput || !locationInput) return;
-        
-        const fullText = noteInput.value.trim();
-        const locationVal = locationInput.value.trim();
-        if (!fullText) return;
+    // Sound Engine Activation (Unlocks audio natively upon form submission click)
+    if (fireAudio) {
+        fireAudio.play()
+            .then(() => console.log("Ambient fireplace audio looping successfully!"))
+            .catch(err => console.error("Audio system waiting on direct interaction gesture:", err));
+    }
 
-        // Sound Engine Activation
-        if (fireAudio) {
-            fireAudio.play()
-                .then(() => console.log("Ambient fireplace audio looping."))
-                .catch(err => console.error("Audio system waiting for full gesture initialization:", err));
+    const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
+
+    if (supabase) {
+        try {
+            const { error } = await supabase
+                .from('gratitude_notes')
+                .insert([{ text: fullText, word: packageToSave }]);
+            if (error) throw error;
+        } catch (err) {
+            console.error("Could not write record to dataset table:", err);
         }
+    }
 
-        const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
-
-        if (supabase) {
-            try {
-                const { error } = await supabase
-                    .from('gratitude_notes')
-                    .insert([{ text: fullText, word: packageToSave }]);
-                if (error) throw error;
-            } catch (err) {
-                console.error("Could not write record to dataset table:", err);
-            }
-        }
-
-        noteInput.value = '';
-        locationInput.value = ''; 
-        if (noteModal) noteModal.classList.add('hidden');
-        
-        if (fireSprite) fireSprite.className = "fire status-medium";
-        createSpark(packageToSave);
-    });
+    noteInput.value = '';
+    locationInput.value = ''; 
+    if (noteModal) noteModal.classList.add('hidden');
+    
+    if (fireSprite) fireSprite.className = "fire status-medium";
+    createSpark(packageToSave);
 }
