@@ -5,9 +5,11 @@ const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 // Safe global initialization
 let supabase;
 try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
 } catch (e) {
-    console.error("Supabase library initialization paused, using fallback mode:", e);
+    console.error("Database connection paused, using local backup simulation mode:", e);
 }
 
 // DOM Elements
@@ -20,10 +22,11 @@ const noteModal = document.getElementById('note-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const submitNoteBtn = document.getElementById('submit-note-btn');
 const noteInput = document.getElementById('note-input');
-const locationInput = document.getElementById('location-input'); // Location tracker input
+const locationInput = document.getElementById('location-input');
 
 let wordsPool = [];
 
+// Boot up layout modules
 window.addEventListener('DOMContentLoaded', () => {
     init();
 });
@@ -35,10 +38,11 @@ function init() {
     setInterval(fetchSparks, 30000);
 }
 
+// Check real-time database state to resize the pixel fire asset
 async function updateFireState() {
     if (!supabase) {
-        fireSprite.className = "fire status-low";
-        fireStatus.innerText = "Sitting quietly by the baseline embers.";
+        if (fireSprite) fireSprite.className = "fire status-low";
+        if (fireStatus) fireStatus.innerText = "Sitting quietly by the baseline embers.";
         return;
     }
     try {
@@ -52,6 +56,8 @@ async function updateFireState() {
         if (error) throw error;
 
         const count = recentNotes ? recentNotes.length : 0;
+        if (!fireSprite || !fireStatus) return;
+        
         fireSprite.className = "fire";
         
         if (count === 0) {
@@ -69,15 +75,16 @@ async function updateFireState() {
         }
     } catch (err) {
         console.error("Database connection issue: ", err);
-        fireSprite.className = "fire status-low";
-        fireStatus.innerText = "Sitting quietly by the baseline embers.";
+        if (fireSprite) fireSprite.className = "fire status-low";
+        if (fireStatus) fireStatus.innerText = "Sitting quietly by the baseline embers.";
     }
 }
 
+// Fetch live notes to float out into space as sparks
 async function fetchSparks() {
     if (!supabase) {
-        wordsPool = ["warmth and peace||Hearth", "gathered together||Global Space"];
-        sparksContainer.innerHTML = ''; 
+        wordsPool = ["warmth and peace||Global Hearth", "gathered close around the fire||Everywhere"];
+        if (sparksContainer) sparksContainer.innerHTML = ''; 
         createSpark(wordsPool[0]);
         return;
     }
@@ -103,21 +110,22 @@ async function fetchSparks() {
             }
         }
         
-        sparksContainer.innerHTML = ''; 
-        for (let i = 0; i < Math.min(5, wordsPool.length); i++) {
-            createSpark(wordsPool[i]);
+        if (sparksContainer) {
+            sparksContainer.innerHTML = ''; 
+            for (let i = 0; i < Math.min(5, wordsPool.length); i++) {
+                createSpark(wordsPool[i]);
+            }
         }
     } catch (err) {
         wordsPool = ["warmth and healing||Hearth"];
-        sparksContainer.innerHTML = '';
+        if (sparksContainer) sparksContainer.innerHTML = '';
         createSpark(wordsPool[0]);
     }
 }
 
 function createSpark(rawText) {
-    if (!rawText) return;
+    if (!rawText || !sparksContainer) return;
     
-    // Parse the sentence and location values using the split marker
     const parts = rawText.split('||');
     const mainNoteText = parts[0];
     const locationText = parts[1] ? parts[1].trim() : "";
@@ -125,12 +133,10 @@ function createSpark(rawText) {
     const spark = document.createElement('div');
     spark.classList.add('spark-word');
     
-    // Create the primary note text node inside the spark element
     const noteSpan = document.createElement('span');
     noteSpan.innerText = mainNoteText;
     spark.appendChild(noteSpan);
     
-    // If a location exists, build a smaller stylized label underneath it
     if (locationText) {
         const locSpan = document.createElement('span');
         locSpan.classList.add('spark-location');
@@ -143,7 +149,7 @@ function createSpark(rawText) {
     
     spark.style.setProperty('--start-x', `${startX}%`);
     spark.style.setProperty('--end-x', `${endX}%`);
-    spark.style.animationDuration = `${10 + Math.random() * 6}s`;
+    spark.style.animationDuration = `${11 + Math.random() * 5}s`;
 
     spark.addEventListener('click', () => {
         spark.style.opacity = '0';
@@ -158,45 +164,52 @@ function createSpark(rawText) {
     sparksContainer.appendChild(spark);
 }
 
-// Modal Display Logic
-openModalBtn.addEventListener('click', () => {
-    noteModal.classList.remove('hidden');
-});
-closeModalBtn.addEventListener('click', () => {
-    noteModal.classList.add('hidden');
-});
+// Modal Toggle Mechanics
+if (openModalBtn) {
+    openModalBtn.addEventListener('click', () => {
+        if (noteModal) noteModal.classList.remove('hidden');
+    });
+}
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+        if (noteModal) noteModal.classList.add('hidden');
+    });
+}
 
-// Submit Note & Optional Location data combo
-submitNoteBtn.addEventListener('click', async () => {
-    const fullText = noteInput.value.trim();
-    const locationVal = locationInput.value.trim();
-    if (!fullText) return;
+// Submit Note to Database Stack
+if (submitNoteBtn) {
+    submitNoteBtn.addEventListener('click', async () => {
+        if (!noteInput || !locationInput) return;
+        
+        const fullText = noteInput.value.trim();
+        const locationVal = locationInput.value.trim();
+        if (!fullText) return;
 
-    // Trigger crackle audio loop upon active input submission
-    if (fireAudio) {
-        fireAudio.play()
-            .then(() => console.log("Fire ambient loop active."))
-            .catch(err => console.error("Audio engine delayed:", err));
-    }
-
-    // Stitch text and location together into a single column storage format
-    const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
-
-    if (supabase) {
-        try {
-            const { error } = await supabase
-                .from('gratitude_notes')
-                .insert([{ text: fullText, word: packageToSave }]);
-            if (error) throw error;
-        } catch (err) {
-            console.error("Could not save note data:", err);
+        // Sound Engine Activation
+        if (fireAudio) {
+            fireAudio.play()
+                .then(() => console.log("Ambient fireplace audio looping."))
+                .catch(err => console.error("Audio system waiting for full gesture initialization:", err));
         }
-    }
 
-    noteInput.value = '';
-    locationInput.value = ''; // Reset input box fields cleanly
-    noteModal.classList.add('hidden');
-    
-    fireSprite.className = "fire status-medium";
-    createSpark(packageToSave);
-});
+        const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
+
+        if (supabase) {
+            try {
+                const { error } = await supabase
+                    .from('gratitude_notes')
+                    .insert([{ text: fullText, word: packageToSave }]);
+                if (error) throw error;
+            } catch (err) {
+                console.error("Could not write record to dataset table:", err);
+            }
+        }
+
+        noteInput.value = '';
+        locationInput.value = ''; 
+        if (noteModal) noteModal.classList.add('hidden');
+        
+        if (fireSprite) fireSprite.className = "fire status-medium";
+        createSpark(packageToSave);
+    });
+}
