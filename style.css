@@ -1,0 +1,168 @@
+:root {
+    --bg-color: #0d0d1a;
+    --pixel-font: 'VT323', monospace;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: #fff;
+    font-family: var(--pixel-font);
+    font-size: 24px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Entry Overlay */
+.overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #05050a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    text-align: center;
+    transition: opacity 1s ease;
+}
+.overlay h1 { font-size: 64px; color: #ff6b3d; margin-bottom: 10px; }
+.overlay p { color: #a0a0c0; font-size: 28px; margin-bottom: 30px; }
+
+/* Main Layout */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    justify-content: flex-end;
+    padding-bottom: 80px;
+    box-sizing: border-box;
+}
+
+/* 16-Bit Campfire Simulation using pure CSS shapes and animations */
+.hearth {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+}
+
+.fire {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4500;
+    border-radius: 50% 50% 20% 20%;
+    filter: blur(2px);
+    animation: flicker 0.15s infinite alternate;
+    box-shadow: 0 0 40px #ff4500;
+    transition: all 1s ease;
+}
+
+/* Fire Size States based on community activity */
+.status-dead { width: 0px; height: 0px; opacity: 0; }
+.status-low { width: 40px; height: 50px; background: #ff6b3d; box-shadow: 0 0 20px #ff6b3d; }
+.status-medium { width: 70px; height: 90px; background: #ff4500; box-shadow: 0 0 40px #ff4500; }
+.status-high { width: 100px; height: 140px; background: #ffcc00; box-shadow: 0 0 60px #ffcc00; animation: flicker 0.08s infinite alternate; }
+
+.logs {
+    position: absolute;
+    bottom: 0;
+    width: 100px;
+    height: 20px;
+    background: #5c2c16;
+    border-radius: 4px;
+    left: 10px;
+    box-shadow: inset 0 -5px 0 #3a1a0b;
+}
+
+/* Sparks / Floating Words */
+.sparks-container {
+    position: absolute;
+    top: 0; bottom: 150px; left: 0; right: 0;
+    pointer-events: none;
+}
+
+.spark-word {
+    position: absolute;
+    color: #ffcc00;
+    font-size: 28px;
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 0;
+    animation: floatUp 8s linear infinite;
+    user-select: none;
+    text-shadow: 2px 2px 0px #000;
+}
+.spark-word:hover { color: #fff; transform: scale(1.1); }
+
+/* Status UI */
+.status-panel { text-align: center; margin-bottom: 30px; z-index: 2; }
+.presence-counter { font-size: 20px; color: #8888a0; margin-top: 5px; }
+
+/* Pixel Buttons */
+.pixel-btn {
+    background: #ff6b3d;
+    color: white;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 0 #000;
+    padding: 10px 20px;
+    font-family: var(--pixel-font);
+    font-size: 28px;
+    cursor: pointer;
+    outline: none;
+    image-rendering: pixelated;
+}
+.pixel-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 #000; }
+.pixel-btn.secondary { background: #444; }
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+}
+.modal.hidden { display: none; }
+.modal-content {
+    background: #1a1a30;
+    border: 6px solid #ff6b3d;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+.modal-content input {
+    width: 80%;
+    padding: 10px;
+    font-family: var(--pixel-font);
+    font-size: 24px;
+    background: #0d0d1a;
+    color: #fff;
+    border: 3px solid #fff;
+    margin: 20px 0;
+    text-align: center;
+}
+
+/* Animations */
+@keyframes flicker {
+    0% { transform: translateX(-50%) scaleX(1); }
+    100% { transform: translateX(-50%) scaleX(0.9) scaleY(1.1); }
+}
+
+@keyframes floatUp {
+    0% { bottom: 0px; left: var(--start-x); opacity: 0; transform: scale(0.8); }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { bottom: 100%; left: var(--end-x); opacity: 0; transform: scale(1); }
+}
