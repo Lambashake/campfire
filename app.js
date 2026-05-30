@@ -20,10 +20,10 @@ const noteModal = document.getElementById('note-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const submitNoteBtn = document.getElementById('submit-note-btn');
 const noteInput = document.getElementById('note-input');
+const locationInput = document.getElementById('location-input'); // Location tracker input
 
 let wordsPool = [];
 
-// Start the program instantly when the window finishes loading
 window.addEventListener('DOMContentLoaded', () => {
     init();
 });
@@ -35,7 +35,6 @@ function init() {
     setInterval(fetchSparks, 30000);
 }
 
-// Fetch notes from the last 24 hours to determine fire strength
 async function updateFireState() {
     if (!supabase) {
         fireSprite.className = "fire status-low";
@@ -75,10 +74,9 @@ async function updateFireState() {
     }
 }
 
-// Fetch recent entries to turn into floating sparks
 async function fetchSparks() {
     if (!supabase) {
-        wordsPool = ["warmth and peace", "gathered around the hearth", "quiet reflections"];
+        wordsPool = ["warmth and peace||Hearth", "gathered together||Global Space"];
         sparksContainer.innerHTML = ''; 
         createSpark(wordsPool[0]);
         return;
@@ -93,15 +91,15 @@ async function fetchSparks() {
         if (error) throw error;
 
         if (!notes || notes.length === 0) {
-            wordsPool = ["warmth and peace", "gathered around the hearth", "quiet reflections"];
+            wordsPool = ["warmth and peace||Hearth", "cozy connection||Everywhere"];
         } else {
-            // FILTER: Only include entries that contain at least one space (full sentences)
+            // FILTER: Only display entries that contain multiple words (full sentences)
             wordsPool = notes
                 .map(n => n.word)
                 .filter(text => text && text.trim().includes(' '));
             
             if (wordsPool.length === 0) {
-                wordsPool = ["welcome to the hearth", "the fire is starting fresh"];
+                wordsPool = ["welcome back to the hearth||World", "the fire is resetting fresh||Space"];
             }
         }
         
@@ -110,24 +108,42 @@ async function fetchSparks() {
             createSpark(wordsPool[i]);
         }
     } catch (err) {
-        wordsPool = ["warmth and peace", "cozy connections"];
+        wordsPool = ["warmth and healing||Hearth"];
         sparksContainer.innerHTML = '';
-        createSpark("welcome back by the fire");
+        createSpark(wordsPool[0]);
     }
 }
 
-function createSpark(text) {
-    if (!text) return;
+function createSpark(rawText) {
+    if (!rawText) return;
+    
+    // Parse the sentence and location values using the split marker
+    const parts = rawText.split('||');
+    const mainNoteText = parts[0];
+    const locationText = parts[1] ? parts[1].trim() : "";
+
     const spark = document.createElement('div');
     spark.classList.add('spark-word');
-    spark.innerText = text;
     
-    const startX = Math.floor(Math.random() * 30) + 20; 
+    // Create the primary note text node inside the spark element
+    const noteSpan = document.createElement('span');
+    noteSpan.innerText = mainNoteText;
+    spark.appendChild(noteSpan);
+    
+    // If a location exists, build a smaller stylized label underneath it
+    if (locationText) {
+        const locSpan = document.createElement('span');
+        locSpan.classList.add('spark-location');
+        locSpan.innerText = `from ${locationText}`;
+        spark.appendChild(locSpan);
+    }
+    
+    const startX = Math.floor(Math.random() * 40) + 15; 
     const endX = startX + (Math.floor(Math.random() * 20) - 10); 
     
     spark.style.setProperty('--start-x', `${startX}%`);
     spark.style.setProperty('--end-x', `${endX}%`);
-    spark.style.animationDuration = `${9 + Math.random() * 5}s`;
+    spark.style.animationDuration = `${10 + Math.random() * 6}s`;
 
     spark.addEventListener('click', () => {
         spark.style.opacity = '0';
@@ -142,38 +158,45 @@ function createSpark(text) {
     sparksContainer.appendChild(spark);
 }
 
-// Modal Toggle Logic - Guaranteed to run safely
+// Modal Display Logic
 openModalBtn.addEventListener('click', () => {
     noteModal.classList.remove('hidden');
 });
-closeModalBtn.addEventListener('click', () => noteModal.classList.add('hidden'));
+closeModalBtn.addEventListener('click', () => {
+    noteModal.classList.add('hidden');
+});
 
-// Submit Note to Database & Unmute Audio
+// Submit Note & Optional Location data combo
 submitNoteBtn.addEventListener('click', async () => {
     const fullText = noteInput.value.trim();
+    const locationVal = locationInput.value.trim();
     if (!fullText) return;
 
-    // Direct Audio play trigger
+    // Trigger crackle audio loop upon active input submission
     if (fireAudio) {
         fireAudio.play()
-            .then(() => console.log("Fire ambient crackle loop started!"))
-            .catch(err => console.error("Audio waiting on interaction:", err));
+            .then(() => console.log("Fire ambient loop active."))
+            .catch(err => console.error("Audio engine delayed:", err));
     }
+
+    // Stitch text and location together into a single column storage format
+    const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
 
     if (supabase) {
         try {
             const { error } = await supabase
                 .from('gratitude_notes')
-                .insert([{ text: fullText, word: fullText }]);
+                .insert([{ text: fullText, word: packageToSave }]);
             if (error) throw error;
         } catch (err) {
-            console.error("Could not save note to database: ", err);
+            console.error("Could not save note data:", err);
         }
     }
 
     noteInput.value = '';
+    locationInput.value = ''; // Reset input box fields cleanly
     noteModal.classList.add('hidden');
     
     fireSprite.className = "fire status-medium";
-    createSpark(fullText);
+    createSpark(packageToSave);
 });
