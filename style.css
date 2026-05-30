@@ -67,7 +67,13 @@ body {
 }
 
 /* Fire Size States based on community activity */
-.status-dead { width: 0px; height: 0px; opacity: 0; }
+.status-dead { 
+    width: 16px; 
+    height: 20px; 
+    background: #ff4500; 
+    box-shadow: 0 0 12px #ff4500; 
+    opacity: 0.5; 
+}
 .status-low { width: 40px; height: 50px; background: #ff6b3d; box-shadow: 0 0 20px #ff6b3d; }
 .status-medium { width: 70px; height: 90px; background: #ff4500; box-shadow: 0 0 40px #ff4500; }
 .status-high { width: 100px; height: 140px; background: #ffcc00; box-shadow: 0 0 60px #ffcc00; animation: flicker 0.08s infinite alternate; }
