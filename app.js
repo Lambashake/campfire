@@ -2,52 +2,64 @@
 const SUPABASE_URL = "https://dwvrkxtnrcxeuptdqxia.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gSef8xS09Y_UAO7TP70kHQ_dHnWB-j3";
 
-// 1. Initialize Supabase directly
-let supabase;
-try {
-    if (window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-} catch (e) {
-    console.error("Database connection paused:", e);
+// ==========================================
+// 1. CRITICAL UI TOGGLES (Must run first!)
+// ==========================================
+const openModalBtn = document.getElementById('open-modal-btn');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const noteModal = document.getElementById('note-modal');
+
+if (openModalBtn && noteModal) {
+    openModalBtn.onclick = function() {
+        noteModal.classList.remove('hidden');
+    };
 }
 
-// 2. Map DOM Elements directly
+if (closeModalBtn && noteModal) {
+    closeModalBtn.onclick = function() {
+        noteModal.classList.add('hidden');
+    };
+}
+
+// ==========================================
+// 2. MAP REMAINING ELEMENTS SAFELY
+// ==========================================
 const fireAudio = document.getElementById('fire-audio');
 const fireSprite = document.getElementById('fire-sprite');
 const fireStatus = document.getElementById('fire-status');
 const sparksContainer = document.getElementById('sparks-container');
-const openModalBtn = document.getElementById('open-modal-btn');
-const noteModal = document.getElementById('note-modal');
-const closeModalBtn = document.getElementById('close-modal-btn');
 const submitNoteBtn = document.getElementById('submit-note-btn');
 const noteInput = document.getElementById('note-input');
 const locationInput = document.getElementById('location-input');
 
 let wordsPool = [];
+let supabase = null;
 
-// 3. Direct Event Listeners for the UI Elements
-if (openModalBtn && noteModal) {
-    openModalBtn.addEventListener('click', () => {
-        noteModal.classList.remove('hidden');
-    });
+// ==========================================
+// 3. ISOLATED DATABASE INITIALIZATION
+// ==========================================
+try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch (e) {
+    console.error("Database framework skipped or offline, using backup mode:", e);
 }
 
-if (closeModalBtn && noteModal) {
-    closeModalBtn.addEventListener('click', () => {
-        noteModal.classList.add('hidden');
-    });
-}
-
+// Attach submission action
 if (submitNoteBtn) {
-    submitNoteBtn.addEventListener('click', handleNoteSubmission);
+    submitNoteBtn.onclick = handleNoteSubmission;
 }
 
-// 4. Start Background Fire Mechanics
-updateFireState();
-fetchSparks();
-setInterval(updateFireState, 30000);
-setInterval(fetchSparks, 30000);
+// Fire up background processes cleanly
+startEngine();
+
+function startEngine() {
+    updateFireState();
+    fetchSparks();
+    setInterval(updateFireState, 30000);
+    setInterval(fetchSparks, 30000);
+}
 
 // Check real-time database state to resize the pixel fire asset
 async function updateFireState() {
@@ -111,7 +123,7 @@ async function fetchSparks() {
         if (!notes || notes.length === 0) {
             wordsPool = ["warmth and peace||Hearth", "cozy connection||Everywhere"];
         } else {
-            // FILTER: Only display entries that contain multiple words (full sentences)
+            // FILTER: Only display entries that contain multiple words (sentences)
             wordsPool = notes
                 .map(n => n.word)
                 .filter(text => text && text.trim().includes(' '));
@@ -183,11 +195,11 @@ async function handleNoteSubmission() {
     const locationVal = locationInput.value.trim();
     if (!fullText) return;
 
-    // Sound Engine Activation
+    // Sound Engine Playback Trigger
     if (fireAudio) {
         fireAudio.play()
-            .then(() => console.log("Ambient fireplace audio looping successfully!"))
-            .catch(err => console.error("Audio system waiting on interaction gesture:", err));
+            .then(() => console.log("Crackle audio activated."))
+            .catch(err => console.error("Audio engine interaction check:", err));
     }
 
     const packageToSave = locationVal ? `${fullText}||${locationVal}` : `${fullText}`;
@@ -199,7 +211,7 @@ async function handleNoteSubmission() {
                 .insert([{ text: fullText, word: packageToSave }]);
             if (error) throw error;
         } catch (err) {
-            console.error("Could not write record to dataset table:", err);
+            console.error("Could not write record to table:", err);
         }
     }
 
