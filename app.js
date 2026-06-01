@@ -31,6 +31,31 @@ function init() {
     // Refresh fire health and words every 30 seconds
     setInterval(updateFireState, 30000);
     setInterval(fetchSparks, 30000);
+
+    // Track how many people are active at the hearth in real-time
+    const presenceChannel = supabase.channel('hearth_room');
+
+    presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            const state = presenceChannel.presenceState();
+            const totalPeople = Object.keys(state).length;
+            const counterEl = document.querySelector('.presence-counter');
+            
+            if (counterEl) {
+                if (totalPeople <= 1) {
+                    counterEl.innerText = "✨ You are sitting quietly by the fire.";
+                } else {
+                    const othersCount = totalPeople - 1;
+                    const peopleWord = othersCount === 1 ? "person" : "people";
+                    counterEl.innerText = `✨ ${othersCount} ${peopleWord} sitting by the fire beside you.`;
+                }
+            }
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await presenceChannel.track({ online_at: new Date().toISOString() });
+            }
+        });
 }
 
 // Fetch notes from the last 24 hours to determine fire strength
